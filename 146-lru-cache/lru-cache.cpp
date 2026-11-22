@@ -1,44 +1,85 @@
 class LRUCache {
 private:
+    struct Node {
+        int key, value;
+        Node* prev;
+        Node* next;
+
+        Node(int k, int v) {
+            key = k;
+            value = v;
+            prev = nullptr;
+            next = nullptr;
+        }
+    };
+
     int capacity;
 
-    list<pair<int, int>> dll;
-    unordered_map<int, list<pair<int, int>>::iterator> mp;
+    unordered_map<int, Node*> mp;
+
+    Node* head = new Node(-1, -1);
+    Node* tail = new Node(-1, -1);
+
+    void remove(Node* node) {
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+    }
+
+    void insert(Node* node) {
+        node->next = head->next;
+        node->prev = head;
+
+        head->next->prev = node;
+        head->next = node;
+    }
 
 public:
-    LRUCache(int capacity) : capacity(capacity) {
-        mp.reserve(capacity);
+    LRUCache(int capacity) {
+        this->capacity = capacity;
+
+        head->next = tail;
+        tail->prev = head;
     }
 
     int get(int key) {
-        auto it = mp.find(key);
-
-        if (it == mp.end())
+        if (mp.find(key) == mp.end())
             return -1;
 
-        dll.splice(dll.begin(), dll, it->second);
+        Node* node = mp[key];
 
-        return it->second->second;
+        remove(node);
+        insert(node);
+
+        return node->value;
     }
 
     void put(int key, int value) {
-        auto it = mp.find(key);
+        if (mp.find(key) != mp.end()) {
+            Node* node = mp[key];
 
-        if (it != mp.end()) {
-            it->second->second = value;
-            dll.splice(dll.begin(), dll, it->second);
+            node->value = value;
+            remove(node);
+            insert(node);
+
             return;
         }
 
-        if (dll.size() == capacity) {
-            mp.erase(dll.back().first);
-            dll.pop_back();
+        if (mp.size() == capacity) {
+            Node* lru = tail->prev;
+
+            remove(lru);
+            mp.erase(lru->key);
+
+            delete lru;
         }
 
-        dll.emplace_front(key, value);
-        mp[key] = dll.begin();
+        Node* node = new Node(key, value);
+
+        insert(node);
+        mp[key] = node;
     }
 };
+
 
 
 
