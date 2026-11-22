@@ -1,54 +1,45 @@
-
 class LRUCache {
 private:
-    int cap;
+    int capacity;
 
-    list<pair<int, int>> cache;
+    list<pair<int, int>> dll;
     unordered_map<int, list<pair<int, int>>::iterator> mp;
 
 public:
-    LRUCache(int capacity) {
-        cap = capacity;
+    LRUCache(int capacity) : capacity(capacity) {
+        mp.reserve(capacity);
     }
 
     int get(int key) {
-        if(mp.find(key) == mp.end()) {
+        auto it = mp.find(key);
+
+        if (it == mp.end())
             return -1;
-        }
 
-        auto it = mp[key];
+        dll.splice(dll.begin(), dll, it->second);
 
-        int value = it->second;
-
-        cache.splice(cache.begin(), cache, it);
-
-        return value;
+        return it->second->second;
     }
 
     void put(int key, int value) {
+        auto it = mp.find(key);
 
-        if(mp.find(key) != mp.end()) {
-            auto it = mp[key];
-
-            it->second = value;
-
-            cache.splice(cache.begin(), cache, it);
+        if (it != mp.end()) {
+            it->second->second = value;
+            dll.splice(dll.begin(), dll, it->second);
+            return;
         }
-        else {
-            if(cache.size() == cap) {
-                int oldKey = cache.back().first;
 
-                mp.erase(oldKey);
-
-                cache.pop_back();
-            }
-
-            cache.push_front({key, value});
-
-            mp[key] = cache.begin();
+        if (dll.size() == capacity) {
+            mp.erase(dll.back().first);
+            dll.pop_back();
         }
+
+        dll.emplace_front(key, value);
+        mp[key] = dll.begin();
     }
 };
+
 
 
 /**
