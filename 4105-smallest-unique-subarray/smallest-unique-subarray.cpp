@@ -1,93 +1,62 @@
 class Solution {
 public:
     int smallestUniqueSubarray(vector<int>& nums) {
+        const long long MOD1 = 1000000007;
+        const long long MOD2 = 1000000009;
+        const long long BASE = 911382323;
+
         int n = nums.size();
 
-        vector<int> sa(n), rank(n), temp(n);
+        vector<long long> p1(n + 1, 1), p2(n + 1, 1);
+        vector<long long> h1(n + 1, 0), h2(n + 1, 0);
 
         for(int i = 0; i < n; i++) {
-            sa[i] = i;
-            rank[i] = nums[i];
+            p1[i + 1] = p1[i] * BASE % MOD1;
+            p2[i + 1] = p2[i] * BASE % MOD2;
+
+            h1[i + 1] = (h1[i] * BASE + nums[i]) % MOD1;
+            h2[i + 1] = (h2[i] * BASE + nums[i]) % MOD2;
         }
 
-        // Build suffix array using doubling
-        for(int k = 1; ; k *= 2) {
+        auto check = [&](int len) {
+            unordered_map<unsigned long long, int> mp;
+            mp.reserve(n * 2);
 
-            sort(sa.begin(), sa.end(), [&](int a, int b) {
-                if(rank[a] != rank[b])
-                    return rank[a] < rank[b];
+            for(int i = 0; i + len <= n; i++) {
+                int j = i + len;
 
-                int x = (a + k < n) ? rank[a + k] : -1;
-                int y = (b + k < n) ? rank[b + k] : -1;
+                long long x = (h1[j] -
+                    h1[i] * p1[len] % MOD1 + MOD1) % MOD1;
 
-                return x < y;
-            });
+                long long y = (h2[j] -
+                    h2[i] * p2[len] % MOD2 + MOD2) % MOD2;
 
-            temp[sa[0]] = 0;
+                unsigned long long key =
+                    (unsigned long long)x * MOD2 + y;
 
-            for(int i = 1; i < n; i++) {
-                int a = sa[i - 1];
-                int b = sa[i];
-
-                bool different =
-                    rank[a] != rank[b] ||
-                    (a + k < n ? rank[a + k] : -1) !=
-                    (b + k < n ? rank[b + k] : -1);
-
-                temp[b] = temp[a] + different;
+                mp[key]++;
             }
 
-            rank.swap(temp);
-
-            if(rank[sa[n - 1]] == n - 1)
-                break;
-        }
-
-        // Build inverse suffix array
-        vector<int> pos(n);
-
-        for(int i = 0; i < n; i++) {
-            pos[sa[i]] = i;
-        }
-
-        // Kasai LCP algorithm
-        vector<int> lcp(n, 0);
-        int h = 0;
-
-        for(int i = 0; i < n; i++) {
-            int r = pos[i];
-
-            if(r == n - 1) {
-                h = 0;
-                continue;
+            for(auto &it : mp) {
+                if(it.second == 1)
+                    return true;
             }
 
-            int j = sa[r + 1];
+            return false;
+        };
 
-            while(i + h < n && j + h < n &&
-                  nums[i + h] == nums[j + h]) {
-                h++;
-            }
-
-            lcp[r] = h;
-
-            if(h > 0)
-                h--;
-        }
-
-        // Find smallest unique subarray
+        int l = 1, r = n;
         int ans = n;
 
-        for(int r = 0; r < n; r++) {
-            int left = (r > 0) ? lcp[r - 1] : 0;
-            int right = (r < n - 1) ? lcp[r] : 0;
+        while(l <= r) {
+            int mid = l + (r - l) / 2;
 
-            int maxLCP = max(left, right);
-
-            int required = maxLCP + 1;
-
-            if(required <= n - sa[r]) {
-                ans = min(ans, required);
+            if(check(mid)) {
+                ans = mid;
+                r = mid - 1;
+            }
+            else {
+                l = mid + 1;
             }
         }
 
