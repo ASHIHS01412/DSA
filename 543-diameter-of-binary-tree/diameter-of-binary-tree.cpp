@@ -27,6 +27,6 @@ public:
         int rightD = diameterOfBinaryTree(root->right);
         int currD = hight(root->left)+ hight(root->right);
 
-        return max(max(leftD, rightD), currD);
+        return max(currD, max(leftD, rightD));
     }
 };
