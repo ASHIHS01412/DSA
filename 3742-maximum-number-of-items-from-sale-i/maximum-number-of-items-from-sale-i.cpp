@@ -2,37 +2,40 @@ class Solution {
 public:
     int maximumSaleItems(vector<vector<int>>& items, int budget) {
 
-        const int MAXF = 1500;
-
-        vector<int> freq(MAXF + 1, 0);
-        vector<int> cnt(MAXF + 1, 0);
-
+        int n = items.size();
         int minPrice = INT_MAX;
 
-        for (auto &item : items) {
-            freq[item[0]]++;
-            minPrice = min(minPrice, item[1]);
-        }
+        vector<vector<int>> dp(
+            n + 1, vector<int>(budget + 1, 0)
+        );
 
-        // Precompute divisibility counts
-        for (int f = 1; f <= MAXF; f++) {
-            for (int j = f; j <= MAXF; j += f) {
-                cnt[f] += freq[j];
+        for (int i = 0; i < n; i++) {
+
+            int factor = items[i][0];
+            int price = items[i][1];
+
+            minPrice = min(minPrice, price);
+
+            int cnt = 0;
+
+            for (auto &item : items) {
+                if (item[0] % factor == 0) {
+                    cnt++;
+                }
             }
-        }
 
-        vector<int> dp(budget + 1, 0);
+            for (int j = 0; j <= budget; j++) {
 
-        for (auto &item : items) {
+                // Skip this item type
+                dp[i + 1][j] = dp[i][j];
 
-            int factor = item[0];
-            int price = item[1];
-
-            for (int j = budget; j >= price; j--) {
-                dp[j] = max(
-                    dp[j],
-                    dp[j - price] + cnt[factor]
-                );
+                // Buy its first copy
+                if (j >= price) {
+                    dp[i + 1][j] = max(
+                        dp[i + 1][j],
+                        dp[i][j - price] + cnt
+                    );
+                }
             }
         }
 
@@ -41,7 +44,7 @@ public:
         for (int i = 0; i <= budget; i++) {
             ans = max(
                 ans,
-                dp[i] + (budget - i) / minPrice
+                dp[n][i] + (budget - i) / minPrice
             );
         }
 
