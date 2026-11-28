@@ -19,30 +19,25 @@ public:
                 freq[i] += freq[j];
         }
 
-        // {price, gain}
-        priority_queue<
-            pair<int, int>,
-            vector<pair<int, int>>,
-            greater<pair<int, int>>
-        > pq;
+        // Store {price, gain}
+        vector<pair<int, int>> candidates;
 
         for (auto &x : items) {
             int gain = freq[x[0]] - 1;
 
             if (gain > 0 && x[1] < 2LL * minPrice) {
-                pq.push({x[1], gain});
+                candidates.push_back({x[1], gain});
             }
         }
+
+        sort(candidates.begin(), candidates.end());
 
         long long ans = 0;
         long long rem = budget;
 
-        while (!pq.empty()) {
-            auto curr = pq.top();
-            pq.pop();
-
-            int price = curr.first;
-            int gain = curr.second;
+        for (auto &x : candidates) {
+            int price = x.first;
+            int gain = x.second;
 
             long long take = min((long long)gain, rem / price);
 
